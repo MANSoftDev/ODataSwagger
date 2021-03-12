@@ -1,9 +1,12 @@
 
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 using Microsoft.AspNet.OData.Builder;
 using Microsoft.AspNet.OData.Extensions;
+using Microsoft.AspNet.OData.Formatter;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.Net.Http.Headers;
 
 using ODataSwagger.Swagger;
 
@@ -36,6 +40,17 @@ namespace ODataSwagger
         /// <param name="services">The collection of services to configure the application with.</param>
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMvcCore(options =>
+            {
+                IEnumerable<ODataOutputFormatter> outputFormatters =
+                    options.OutputFormatters.OfType<ODataOutputFormatter>()
+                    .Where(_ => _.SupportedMediaTypes.Count == 0);
+
+                foreach (var outputFormatter in outputFormatters)
+                {
+                    outputFormatter.SupportedMediaTypes.Add(new MediaTypeHeaderValue("application/odata"));
+                }
+            });
             services.AddControllers();
             services.AddApiVersioning(options =>
             {
@@ -72,9 +87,9 @@ namespace ODataSwagger
 
             string XmlCommentsFilePath()
             {
-                    var basePath = PlatformServices.Default.Application.ApplicationBasePath;
-                    var fileName = typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml";
-                    return Path.Combine(basePath, fileName);
+                var basePath = PlatformServices.Default.Application.ApplicationBasePath;
+                var fileName = typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml";
+                return Path.Combine(basePath, fileName);
             }
         }
 
@@ -101,6 +116,7 @@ namespace ODataSwagger
                 // Indicate what OData methods to support
                 endpoints.Select().Filter().Count().OrderBy();
                 endpoints.MapVersionedODataRoute("odata", "api", modelBuilder);
+                endpoints.EnableDependencyInjection();
             });
 
             app.UseSwagger();

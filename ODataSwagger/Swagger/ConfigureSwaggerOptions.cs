@@ -28,6 +28,7 @@ namespace ODataSwagger.Swagger
         /// Initializes a new instance of the <see cref="ConfigureSwaggerOptions"/> class.
         /// </summary>
         /// <param name="provider">The <see cref="IApiVersionDescriptionProvider">provider</see> used to generate Swagger documents.</param>
+        /// <param name="configuration"><see cref="IConfiguration"/> implementation</param>
         public ConfigureSwaggerOptions(IApiVersionDescriptionProvider provider, IConfiguration configuration)
         {
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
@@ -45,7 +46,12 @@ namespace ODataSwagger.Swagger
             }
         }
 
-        static OpenApiInfo CreateInfoForApiVersion(ApiVersionDescription description)
+        /// <summary>
+        /// Create version info for swagger
+        /// </summary>
+        /// <param name="description"><see cref="ApiVersionDescription"/></param>
+        /// <returns><see cref="OpenApiInfo"/></returns>
+        private static OpenApiInfo CreateInfoForApiVersion(ApiVersionDescription description)
         {
             var info = new OpenApiInfo();
             // Define values in appConfig for extensibility

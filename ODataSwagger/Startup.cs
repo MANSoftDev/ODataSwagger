@@ -1,5 +1,3 @@
-
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -40,17 +38,6 @@ namespace ODataSwagger
         /// <param name="services">The collection of services to configure the application with.</param>
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvcCore(options =>
-            {
-                IEnumerable<ODataOutputFormatter> outputFormatters =
-                    options.OutputFormatters.OfType<ODataOutputFormatter>()
-                    .Where(_ => _.SupportedMediaTypes.Count == 0);
-
-                foreach (var outputFormatter in outputFormatters)
-                {
-                    outputFormatter.SupportedMediaTypes.Add(new MediaTypeHeaderValue("application/odata"));
-                }
-            });
             services.AddControllers();
             services.AddApiVersioning(options =>
             {
@@ -63,6 +50,19 @@ namespace ODataSwagger
                     new HeaderApiVersionReader("api-version", "x-ms-version"));
             });
             services.AddOData().EnableApiVersioning();
+            // Place after AddOData to avoid issues with formatters not being available
+            services.AddMvcCore(options =>
+            {
+                var formatters =
+                    options.OutputFormatters.OfType<ODataOutputFormatter>()
+                    .Where(_ => _.SupportedMediaTypes.Count == 0);
+
+                foreach (var formatter in formatters)
+                {
+                    formatter.SupportedMediaTypes.Add(new MediaTypeHeaderValue("application/odata"));
+                }
+            });
+
             services.AddODataApiExplorer(
                 options =>
                 {
